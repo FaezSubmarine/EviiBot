@@ -1,5 +1,3 @@
-## Behold
-
 # Evii Bot
 
 ### Background:
