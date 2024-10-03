@@ -1,13 +1,12 @@
 const index = require('./index')
 import neo4j,{int} from 'neo4j-driver';
-
-//const  mockSession = neo4j.driver('neo4j://localhost:7687',neo4j.auth.basic('neo4j', 'FuckYou1')).session();
+const { token, URI, user, password } = require("./config.json");
 
 let driver = null;
 let session = null;
 
 beforeAll(()=>{
-    driver = neo4j.driver('neo4j://localhost:7687',neo4j.auth.basic('neo4j', 'FuckYou1'));
+    driver = neo4j.driver(URI,neo4j.auth.basic(user, password));
     session = driver.session();
 });
 
@@ -57,19 +56,4 @@ describe('testing regex',()=>{
         expect(res).not.toBe(undefined);
         console.log(res[0]);
     });
-    // test('test if regex grouped the link',()=>{
-    //     let testMsg = "https://www.MainURL.com/SubURL";
-    //     let res = index.findLink(testMsg)[0];
-    //     expect(res.groups["MainURL"]).toBe("https://www.MainURL.com");
-    //     expect(res.groups["SubURL"]).toBe("/SubURL");
-    // })
-
-
-
-    // test('test if regex does not group the sub URL',()=>{
-    //     let testMsg = "https://www.MainURL.com";
-    //     let res = index.findLink(testMsg)[0];
-    //     expect(res.groups["MainURL"]).toBe("https://www.MainURL.com");
-    //     expect(res.groups["SubURL"]).toBe("");
-    // })
 })
