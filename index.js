@@ -55,22 +55,41 @@ for (const folder of commandFolders) {
 	}
 }
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   console.log(`Ready! Logged in as ${c.user.tag}`);
 
   const guilds = client.guilds.cache.map(guild => guild.id);
   console.log(guilds);
 
-  const noOfDays = 7;
-  //TODO: assign the interval to a map
-  var interval = setInterval(async () => {
-    let session = driver.session({ database: 'neo4j' })
-    await deleteURLByDate(noOfDays, session);
-    await deleteHangingUser(session);
-    await session.close();
-  }, day * noOfDays);
+  let session = driver.session({ database: 'neo4j' })
+  await mergeGuild(guilds,session);
+  await session.close();
+
+  // const noOfDays = 7;
+  // //TODO: assign the interval to a map
+  // var interval = setInterval(async () => {
+  //   let session = driver.session({ database: 'neo4j' })
+  //   await deleteURLByDate(noOfDays, session);
+  //   await deleteHangingUser(session);
+  //   await session.close();
+  // }, day * noOfDays);
 });
 
+client.once(Events.GuildCreate, async (g) => {
+
+  let session = driver.session({ database: 'neo4j' })
+  console.log("joined a guild with an ID:"+g)
+  await mergeGuild([g.id],session);
+  await session.close();
+});
+client.once(Events.GuildDelete, async (g) => {
+
+  let session = driver.session({ database: 'neo4j' })
+  console.log("left a guild with an ID:"+g)
+  query = `MATCH (g:Guild{gID:"${g.id}"})--(s:Setting) MATCH (g)--(u:User)--(r:URL) DETACH DELETE g DETACH DELETE u DETACH DELETE r DELETE s`;
+  await session.run(query);
+  await session.close();
+});
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   let res = findLink(message.content);
@@ -108,10 +127,16 @@ async function deleteURLByDate(noOfDays, session) {
 async function deleteHangingUser(session) {
   let query = `MATCH (n:User) WHERE NOT (n)-->() detach delete n`;
   await session.run(query);
-  query = `MATCH (n:Guild) WHERE NOT (n)-->() detach delete n`;
-  await session.run(query);
+  // query = `MATCH (n:Guild) WHERE NOT (n)-->() detach delete n`;
+  // await session.run(query);
 }
 
+async function mergeGuild(gID,session){
+  let arrayQStr = `'${gID.join('\',\'')}'`;
+  console.log(arrayQStr)
+  const query = `WITH [${arrayQStr}] AS gIDs FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element}) MERGE (g)-[:hasSetting]->(s:Setting) ON CREATE SET s.timeOut=duration({hours:1}))`
+  await session.run(query);
+}
 function findLink(msg) {
   let output = [];
   let m;
