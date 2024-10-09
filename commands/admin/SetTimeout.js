@@ -11,14 +11,6 @@ module.exports = {
 		),
 		async execute(interaction) {
 			checkInput(interaction);
-			// await interaction.deferReply();
-			// interaction.fetchReply()
-			// 	.then(reply => console.log(`Replied with ${reply.content}`))
-			// 	.catch(console.error);
-			// interaction.editReply("pong");
-			//await interaction.deleteReply();
-			//await checkInput(interaction);
-			//await interaction.deleteReply();
 
 	}
 };
