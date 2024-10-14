@@ -1,14 +1,9 @@
 const neo4j = require("neo4j-driver");
-const { Client,Collection, Events, GatewayIntentBits } = require("discord.js");
+const { Client,Collection, GatewayIntentBits } = require("discord.js");
 const { token } = require("./config.json");
 
 const fs = require('node:fs');
 const path = require('node:path');
-
-//TODO: place this in the proper events page once those are made
-const {mergeGuild, deleteGuildAndContent,findLink,assessLink} = require('./service/MessageService.js')
-const regex =
-  /(?:http[s]?:\/\/[www]?.)[A-Za-z0-9.-]+(?:\/[\+~%\/.\w_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*)/g;
 
 // Create a new client instance
 const client = new Client({

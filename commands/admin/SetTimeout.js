@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const {checkInput} = require('../../service/AdminService.js');
+const {checkInput,updateTimeOutSetting} = require('../../service/AdminService.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('settimeout')
@@ -10,7 +10,16 @@ module.exports = {
 			.setRequired(true)
 		),
 		async execute(interaction) {
-			checkInput(interaction);
+			try{
+				const res = checkInput(interaction);
+				await updateTimeOutSetting(res,interaction.guildId)
+				await interaction.reply(`successfully set time at ${res.day} day and ${res.hour} hour`)
+				//TODO: do a check on all links to delete if the date had expired
+			}
+			catch(e){
+				console.log(e)
+				await interaction.reply(e);
+			}
 
 	}
 };

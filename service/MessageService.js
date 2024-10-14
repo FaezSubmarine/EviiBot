@@ -1,9 +1,16 @@
-const {mergeGuildQuery,deleteGuildAndContentQuery,findLinkThenMergeOrDeleteQuery} = require('../repository/Repository.js')
+const {mergeGuildQuery,updateTimeoutsAfterBootQuery,deleteDueURLQuery,deleteGuildAndContentQuery,findLinkThenMergeOrDeleteQuery} = require('../repository/Repository.js')
 
 async function mergeGuild(gID){
     let arrayQStr = `'${gID.join('\',\'')}'`;
     await mergeGuildQuery(arrayQStr)
   }
+
+  async function updateTimeoutAfterBoot(guilds){
+    await updateTimeoutsAfterBootQuery(guilds);
+  }
+async function deleteDueURLs(guilds){
+  await deleteDueURLQuery(guilds)
+}
 
 async function deleteGuildAndContent(gID){
   await deleteGuildAndContentQuery(gID)
@@ -35,6 +42,8 @@ async function assessLink(links,message){
 }
   module.exports = {
     mergeGuild,
+    updateTimeoutAfterBoot,
+    deleteDueURLs,
     deleteGuildAndContent,
     findLink,
     assessLink
