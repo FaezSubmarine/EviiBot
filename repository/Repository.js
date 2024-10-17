@@ -4,6 +4,8 @@ const SetTimeout = require("../commands/Admin/SetTimeout");
 
 let driver;
 
+const SECOND = BigInt(1000);
+const DAY = BigInt(86400000);
 (async () => {
   try {
     driver = neo4j.driver(URI, neo4j.auth.basic(user, password));
@@ -29,39 +31,53 @@ async function deleteGuildAndContentQuery(gID) {
   await session.close();
 }
 async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
-  let session = driver.session({ database: "neo4j" });
   //the set was used to avoid duplicate URL in a single message to trigger the bot
   let urlSet = new Set();
   let returnStr = [];
+
   await Promise.all(
     urls.map(async (element) => {
       let url = element[0];
       if (urlSet.has(url)) return;
       urlSet.add(url);
 
+      let session = driver.session({ database: "neo4j" });
+
       const searchRes = await session.run(
-        `CALL db.index.fulltext.queryNodes("URLIndex",'"${url}"') YIELD node with node WHERE (:Guild{gID:"${gID}"})-[:hasUser]->()-[:posted]->(node) return node`
+        `CALL db.index.fulltext.queryNodes("URLIndex",'"${url}"')
+         YIELD node with node WHERE (:Guild{gID:"${gID}"})-[:hasUser]->()-[:posted]->(node)
+         return elementId(node) as id`
       );
-      //TODO: use apoc.periodic.countdown instead
-      //https://neo4j.com/labs/apoc/4.3/overview/apoc.periodic/apoc.periodic.countdown/
       if (searchRes.records.length == 0) {
-        let res = await session.run(
-          `MERGE(u:User{uID:"${userID}"}) MERGE (g:Guild{gID:"${gID}"})-[:hasUser]->(u) CREATE (url:URL{body:"${url}"}) set url.datePosted = datetime() CREATE (u)-[:posted]->(url) WITH * MATCH (g)--(se:Setting) RETURN elementId(u),se.timeOut`
-        ).then((x)=>{
-          return getTimeOutOBJ(x.records[0]);
-        });
-        console.log(res.toString());
+        await session.run(
+          `MERGE(u:User {uID:"${userID}"})
+           MERGE (g:Guild {gID: "${gID}"}) 
+           MERGE (g)-[:hasUser]->(u)
+           CREATE (url:URL{body:'${url}'}) set url.datePosted = datetime() CREATE (u)-[:posted]->(url) WITH *
+           MATCH (g)--(se:Setting)
+           CALL apoc.periodic.submit(
+           "${gID+userID+url}",
+           "MATCH (g:Guild{gID: '${gID}'})--(s:Setting) CALL apoc.util.sleep(s.timeOut.Days*86400000+s.timeOut.Seconds*1000)
+            MERGE (u:User{uID:'${userID}'}) WITH u
+            MATCH (g)--(u)--(url:URL{body:'${url}'})
+            DETACH DELETE url")
+            YIELD name return name`
+        )
       } else {
-        let id = searchRes.records.map((row) => {
-          return row.get("node").identity.low;
-        });
-        await session.run(`match (u:URL) where ID(u) = ${id} detach delete u`);
+        let id = searchRes.records[0]._fields[0];
+        await session.run(
+          `match (u:URL) where elementId(u) = "${id}" 
+           CALL apoc.periodic.cancel("${gID+userID+url}") YIELD name detach delete u 
+          `);
+
+        await deleteHangingUser(session,gID);
+
         returnStr.push(url);
       }
+      session.close();
     })
   );
-  await deleteHangingUser(session);
-  await session.close();
+
   return returnStr;
 }
 async function updateTimeOutSettingDuration(changes, guild) {
@@ -71,21 +87,20 @@ async function updateTimeOutSettingDuration(changes, guild) {
   );
   await session.close();
 }
-
+//TODO: add cancel to here too
 async function deleteDueURLQuery(guilds) {
-  let session = driver.session({ database: "neo4j" });
+  
   let tx = await session.beginTransaction();
   await Promise.all(
     guilds.map(async (element) => {
-      await tx.run(
+      let session = driver.session({ database: "neo4j" });
+      await session.run(
         `Match (g:Guild{gID: "${element}"})--(s:Setting) WITH s MATCH (g:Guild{gID: "${element}"})--()--(u:URL) WHERE u.datePosted+ duration.between(u.datePosted,datetime())> u.datePosted+s.timeOut DETACH DELETE u`
       );
+      session.close();
     })
   );
-  await tx.commit();
-  await deleteHangingUser(session);
-    //TODO: use apoc.periodic.cancel here
-    //https://neo4j.com/labs/apoc/4.3/overview/apoc.periodic/apoc.periodic.cancel/
+  await deleteHangingUser(session,element);
   await session.close();
 }
 async function updateTimeoutsAfterBootQuery(guilds) {
@@ -96,7 +111,9 @@ async function updateTimeoutsAfterBootQuery(guilds) {
     guilds.map(async (element) => {
       res.push(
         await tx.run(
-          `MATCH (g:Guild{gID: "${element}"})--(s:Setting) with s MATCH (g:Guild{gID: "${element}"})--()--(u:URL) WITH elementId(u) as id, duration.between(DateTime(),u.datePosted+s.timeOut) as dur RETURN id,dur`
+          `MATCH (g:Guild{gID: "${element}"})--(s:Setting) with s 
+           MATCH (g:Guild{gID: "${element}"})--()--(u:URL) WITH elementId(u) as id, duration.between(DateTime(),u.datePosted+s.timeOut) as dur 
+           RETURN id,dur`
         )
       );
     })
@@ -106,8 +123,6 @@ async function updateTimeoutsAfterBootQuery(guilds) {
     if(element.records.length==0)return;
     element.records.forEach(async record=>{
       let timeOutRes = getTimeOutOBJ(record);
-      //TODO: use apoc.periodic.countdown instead
-      //https://neo4j.com/labs/apoc/4.3/overview/apoc.periodic/apoc.periodic.countdown/
       console.log(timeOutRes.toString());
 
     })
@@ -116,9 +131,9 @@ async function updateTimeoutsAfterBootQuery(guilds) {
   await session.close();
 }
 
-async function deleteHangingUser(session) {
-  let query = `MATCH (n:User) WHERE NOT (n)-->() detach delete n`;
-  await session.run(query);
+//TODO: test this
+async function deleteHangingUser(session,gID) {
+  await session.run(`MATCH (:Guild{gID:"${gID}"})(n:User) WHERE NOT (n)-->() detach delete n`);
 }
 
 function getTimeOutOBJ(record){

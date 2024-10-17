@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const {checkInput,updateTimeOutSetting} = require('../../service/AdminService.js');
 module.exports = {
+	//todo: restrict this feature to certain roles
 	data: new SlashCommandBuilder()
 		.setName('settimeout')
 		.setDescription('Set how long does it take for EviiBot to forget a link.')
@@ -14,7 +15,6 @@ module.exports = {
 				const res = checkInput(interaction);
 				await updateTimeOutSetting(res,interaction.guildId)
 				await interaction.reply(`successfully set time at ${res.day} day and ${res.hour} hour`)
-				//TODO: do a check on all links to delete if the date had expired
 			}
 			catch(e){
 				console.log(e)

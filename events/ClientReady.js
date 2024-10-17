@@ -12,6 +12,6 @@ module.exports = {
       
         await mergeGuild(guilds);
         await deleteDueURLs(guilds);
-        await updateTimeoutAfterBoot(guilds)
+        //await updateTimeoutAfterBoot(guilds)
     }
 }

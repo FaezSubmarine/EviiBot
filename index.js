@@ -46,10 +46,4 @@ for (const file of eventFiles) {
 		client.on(event.name, (...args) => event.execute(...args));
 	}
 }
-
-async function deleteURLByDate(noOfDays, session) {
-  let query = `MATCH (u:URL) where duration.inDays(u.datePosted,date()).days>=${noOfDays} detach delete u`;
-
-  await session.run(query);
-}
 client.login(token);

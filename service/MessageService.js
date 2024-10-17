@@ -33,7 +33,6 @@ function findLink(content){
 async function assessLink(links,message){
   let res = await findLinkThenMergeOrDeleteQuery(links,message.guildId,message.author.id);
 
-  console.log(res)
   res.forEach(async element => {
     message.channel.send(
       "HEY GUYS CHECK OUT THIS BRAND NEW LINK I FOUND! " + element
