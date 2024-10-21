@@ -1,6 +1,6 @@
 const { Events } = require('discord.js');
 
-const {mergeGuild,deleteDueURLs,updateTimeoutAfterBoot} = require('../service/MessageService.js')
+const {mergeGuild} = require('../service/MessageService.js')
 
 module.exports = {
     name: Events.ClientReady,
@@ -11,7 +11,5 @@ module.exports = {
         const guilds = c.guilds.cache.map(guild => guild.id);
       
         await mergeGuild(guilds);
-        await deleteDueURLs(guilds);
-        //await updateTimeoutAfterBoot(guilds)
     }
 }

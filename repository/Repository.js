@@ -56,11 +56,14 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
            CREATE (url:URL{body:'${url}'}) set url.datePosted = datetime() CREATE (u)-[:posted]->(url) WITH *
            MATCH (g)--(se:Setting)
            CALL apoc.periodic.submit(
-           "${gID+userID+url}",
-           "MATCH (g:Guild{gID: '${gID}'})--(s:Setting) CALL apoc.util.sleep(s.timeOut.Days*86400000+s.timeOut.Seconds*1000)
-            MERGE (u:User{uID:'${userID}'}) WITH u
-            MATCH (g)--(u)--(url:URL{body:'${url}'})
-            DETACH DELETE url")
+             "${gID+userID+url}",
+             "MATCH (g:Guild{gID: '${gID}'})--(s:Setting)
+             CALL apoc.util.sleep(s.timeOut.Days*86400000+s.timeOut.Seconds*1000)
+             MERGE (u:User{uID:'${userID}'}) WITH u
+             MATCH (g)--(u)--(url:URL{body:'${url}'})
+             DETACH DELETE url
+             WITH g MATCH (g)--(n:User) WHERE NOT (n)-->() detach delete n
+            ")
             YIELD name return name`
         )
       } else {
@@ -87,73 +90,47 @@ async function updateTimeOutSettingDuration(changes, guild) {
   );
   await session.close();
 }
-//TODO: add cancel to here too
-async function deleteDueURLQuery(guilds) {
-  
-  let tx = await session.beginTransaction();
-  await Promise.all(
-    guilds.map(async (element) => {
-      let session = driver.session({ database: "neo4j" });
-      await session.run(
-        `Match (g:Guild{gID: "${element}"})--(s:Setting) WITH s MATCH (g:Guild{gID: "${element}"})--()--(u:URL) WHERE u.datePosted+ duration.between(u.datePosted,datetime())> u.datePosted+s.timeOut DETACH DELETE u`
-      );
-      session.close();
-    })
-  );
-  await deleteHangingUser(session,element);
-  await session.close();
-}
-async function updateTimeoutsAfterBootQuery(guilds) {
-  let session = driver.session({ database: "neo4j" });
-  let res = [];
-  let tx = await session.beginTransaction();
-  await Promise.all(
-    guilds.map(async (element) => {
-      res.push(
-        await tx.run(
-          `MATCH (g:Guild{gID: "${element}"})--(s:Setting) with s 
-           MATCH (g:Guild{gID: "${element}"})--()--(u:URL) WITH elementId(u) as id, duration.between(DateTime(),u.datePosted+s.timeOut) as dur 
-           RETURN id,dur`
-        )
-      );
-    })
-  );
-  await tx.commit();
-  res.forEach(async element=>{
-    if(element.records.length==0)return;
-    element.records.forEach(async record=>{
-      let timeOutRes = getTimeOutOBJ(record);
-      console.log(timeOutRes.toString());
 
-    })
-  })
-
-  await session.close();
-}
-
-//TODO: test this
 async function deleteHangingUser(session,gID) {
-  await session.run(`MATCH (:Guild{gID:"${gID}"})(n:User) WHERE NOT (n)-->() detach delete n`);
+  await session.run(`MATCH (:Guild{gID:"${gID}"})--(n:User) WHERE NOT (n)-->() detach delete n`);
 }
 
-function getTimeOutOBJ(record){
-  let obj = {
-    id:record._fields[0],
-    day:record._fields[1].days,
-    second:record._fields[1].seconds,
-    toString: function(){
-      return "id:"+this.id+",day:"+this.day+",second:"+this.second;
-    }
-  }
-
-  return obj;
+async function deleteDueURLQuery(res,gID){
+  let session = driver.session({ database: "neo4j" });
+  await session.run(
+    `MATCH (g:Guild{gID:"${gID}"})--(u:User)--(url:URL)
+     WHERE datetime()+duration.between(url.datePosted,datetime())>datetime()+duration({days:${res.day},hours:${res.hour}})
+     with g,u,url
+    CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete u 
+    `
+  );
+  await session.close();
 }
-
+//todo: cancel in arrays
+async function updateBackgroundJobsQuery(gID){
+  let session = driver.session({ database: "neo4j" });
+  await session.run(
+    `Match paths=(g:Guild{gID:"${gID}"})--(u:User)--(url:URL) with g.gID+u.uID+url.body as jobIDs
+     UNWIND jobIDs as jobID CALL apoc.periodic.cancel(jobID) YIELD name
+           CALL apoc.periodic.submit(
+             name,
+             "MATCH (g:Guild{gID: '${gID}'})--(s:Setting)
+	            MATCH (g)--(u:User)--(url:URL)
+  	          with duration.between(datetime(), url.datePosted+s.timeOut) as d
+  	          CALL apoc.util.sleep(d.Days*86400000+d.Seconds*1000)
+  	          MATCH (g)--(u)--(url:URL)
+  	          DETACH DELETE url
+  	          WITH g,u WHERE NOT (u)-->() detach delete u
+            ")
+       YIELD name as secondName return secondName`
+  );
+  await session.close();
+}
 module.exports = {
   mergeGuildQuery,
-  deleteDueURLQuery,
-  updateTimeoutsAfterBootQuery,
   deleteGuildAndContentQuery,
   findLinkThenMergeOrDeleteQuery,
   updateTimeOutSettingDuration,
+  deleteDueURLQuery,
+  updateBackgroundJobsQuery
 };

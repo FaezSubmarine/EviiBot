@@ -1,5 +1,5 @@
 const { REST, Routes } = require('discord.js');
-const { clientId, token } = require('./config.json');
+const { clientId, guildId, token } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -15,6 +15,7 @@ for (const folder of commandFolders) {
 	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
+		console.log("filepath "+filePath)
 		const command = require(filePath);
 		if ('data' in command && 'execute' in command) {
 			commands.push(command.data.toJSON());
@@ -30,10 +31,17 @@ const rest = new REST().setToken(token);
 // and deploy your commands!
 (async () => {
 	try {
-		console.log(`Started refreshing ${commands.length} application (/) commands`);
+		await rest.put(Routes.applicationCommands(clientId), { body: [] })
+     .then(() => console.log('Successfully deleted all application commands.'))
+     .catch(console.error);
+	 await rest.put(Routes.applicationGuildCommands(clientId,"928917893792550912"), { body: [] })
+     .then(() => console.log('Successfully deleted all application guild commands.'))
+     .catch(console.error);
+		console.log(`Started refreshing ${commands.length} application (/) commands.`);
+
 		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
-			Routes.applicationGuildCommands(clientId,"928917893792550912"),
+			Routes.applicationCommands(clientId),
 			{ body: commands },
 		);
 
