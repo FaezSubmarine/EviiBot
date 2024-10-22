@@ -1,7 +1,6 @@
 const { SlashCommandBuilder,PermissionFlagsBits } = require('discord.js');
 const {checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs} = require('../../service/AdminService.js');
 module.exports = {
-	//todo: restrict this feature to certain roles
 	data: new SlashCommandBuilder()
 		.setName('settimeout')
 		.setDescription('Set how long does it take for EviiBot to forget a link.')
@@ -14,9 +13,6 @@ module.exports = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 		async execute(interaction) {
 			try{
-				// if(!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)){
-				// 	throw "oops, you dont have the proper permissions to use this command!"
-				// }
 				const res = checkInput(interaction);
 				await updateTimeOutSetting(res,interaction.guildId)
 				await deleteDueURL(res,interaction.guildId)

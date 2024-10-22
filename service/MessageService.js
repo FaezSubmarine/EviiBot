@@ -24,8 +24,12 @@ function findLink(content){
 }
 async function assessLink(links,message){
   let res = await findLinkThenMergeOrDeleteQuery(links,message.guildId,message.author.id);
+  return res;
+  //todo: seperate this then make another outcome of repost link
 
-  res.forEach(async element => {
+}
+async function messageRepost(links,message){
+  links.forEach(async element => {
     message.channel.send(
       "HEY GUYS CHECK OUT THIS BRAND NEW LINK I FOUND! " + element
     );
@@ -35,5 +39,6 @@ async function assessLink(links,message){
     mergeGuild,
     deleteGuildAndContent,
     findLink,
-    assessLink
+    assessLink,
+    messageRepost
   }
