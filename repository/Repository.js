@@ -19,7 +19,7 @@ const DAY = BigInt(86400000);
 async function mergeGuildQuery(arrayQStr) {
   let session = driver.session({ database: "neo4j" });
   await session.run(
-    `WITH [${arrayQStr}] AS gIDs FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element}) MERGE (g)-[:hasSetting]->(s:Setting) ON CREATE SET s.timeOut=duration({hours:1}))`
+    `WITH [${arrayQStr}] AS gIDs FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element}) MERGE (g)-[:hasSetting]->(s:Setting) ON CREATE SET s.timeOut=duration({hours:1}) ON CREATE SET s.mode = 0)`
   );
   await session.close();
 }
@@ -106,7 +106,6 @@ async function deleteDueURLQuery(res,gID){
   );
   await session.close();
 }
-//todo: cancel in arrays
 async function updateBackgroundJobsQuery(gID){
   let session = driver.session({ database: "neo4j" });
   await session.run(
@@ -126,11 +125,27 @@ async function updateBackgroundJobsQuery(gID){
   );
   await session.close();
 }
+
+async function checkModeOfEachGuildQuery(gID){
+  let session = driver.session({ database: "neo4j" });
+  let res = await session.run(`MATCH (g:Guild{gID:"${gID}"})--(s:Setting) return s.mode`)
+  await session.close();
+  console.log(res.records[0]._fields[0])
+  return res.records[0]._fields[0].low;
+}
+
+async function ChangeModeQuery(gID,mode){
+  let session = driver.session({ database: "neo4j" });
+  await session.run(`MATCH (g:Guild{gID:"${gID}"})--(s:Setting) SET  s.mode = ${mode}`)
+  await session.close();
+}
 module.exports = {
   mergeGuildQuery,
   deleteGuildAndContentQuery,
   findLinkThenMergeOrDeleteQuery,
   updateTimeOutSettingDuration,
   deleteDueURLQuery,
-  updateBackgroundJobsQuery
+  updateBackgroundJobsQuery,
+  checkModeOfEachGuildQuery,
+  ChangeModeQuery
 };

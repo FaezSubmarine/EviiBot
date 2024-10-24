@@ -1,4 +1,4 @@
-const{updateTimeOutSettingDuration,deleteDueURLQuery,updateBackgroundJobsQuery} = require('../repository/Repository.js')
+const{updateTimeOutSettingDuration,deleteDueURLQuery,updateBackgroundJobsQuery,ChangeModeQuery} = require('../repository/Repository.js')
 
 const daysAndHoursRegex = /((?<day>[0-9]+)d)?(?<hour>[0-9]+)h/m;
 
@@ -28,7 +28,14 @@ function checkInput(interaction){
     }
     return {day:noOfDays,hour:noOfHours}
 }
-
+function CheckInputForMode(interaction){
+    let str = interaction.options.getString('input')
+    let res = (/[01]/gm).exec(str);
+    if(res==null){
+        throw "Oops, that's not how you do an input!";
+    }
+    return res[0]
+}
 async function updateTimeOutSetting(changes,guild){
     await updateTimeOutSettingDuration(changes,guild)
 }
@@ -40,6 +47,10 @@ async function updateBackgroundJobs(gID){
     await updateBackgroundJobsQuery(gID);
 
 }
+
+async function ChangeMode(gID,mode){
+    await ChangeModeQuery(gID,mode)
+}
 module.exports={
-    checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs
+    checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs,ChangeMode,CheckInputForMode
 }
