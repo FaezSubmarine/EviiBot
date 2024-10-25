@@ -29,7 +29,6 @@ async function assessLink(links,message){
 
 }
 async function messageRepost(links,message){
-  if(links.length==0)return;
   links.forEach(async element => {
     await message.channel.send(
       "HEY GUYS CHECK OUT THIS BRAND NEW LINK I FOUND! " + element
@@ -38,7 +37,6 @@ async function messageRepost(links,message){
 }
 
 async function DeleteAndNotifyMessage(links,message){
-  if(links.length==0)return;
   //todo: get user who posted the original  link
   let msgStr = "Woops, deleting your message  because someone else already posted these links: <"+links.join(">\n<")+">"
   await message.channel.send(msgStr)

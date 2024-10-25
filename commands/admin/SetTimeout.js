@@ -27,3 +27,4 @@ module.exports = {
 
 		}
 };
+//todo: make another slash command to list all current URLs

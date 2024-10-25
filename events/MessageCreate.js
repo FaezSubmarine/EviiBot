@@ -9,6 +9,7 @@ module.exports = {
         let URLs = findLink(message.content);
         if (URLs == null) return;
         let res = await assessLink(URLs,message)
+        if(res.length == 0)return;
         switch(await checkModeOfEachGuild(message.guildId)){
             case 0:
                 await messageRepost(res,message)

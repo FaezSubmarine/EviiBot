@@ -1,6 +1,5 @@
 const neo4j = require("neo4j-driver");
 const { URI, user, password } = require("../config.json");
-const SetTimeout = require("../commands/Admin/SetTimeout");
 
 let driver;
 
@@ -68,9 +67,10 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
         )
       } else {
         let id = searchRes.records[0]._fields[0];
+        //todo:get user who posted the original link
         await session.run(
-          `match (u:URL) where elementId(u) = "${id}" 
-           CALL apoc.periodic.cancel("${gID+userID+url}") YIELD name detach delete u 
+          `match (u:URL)<--(user:uSER) where elementId(u) = "${id}" 
+           CALL apoc.periodic.cancel("${gID}"+user.uID+"${url}") YIELD name detach delete u 
           `);
 
         await deleteHangingUser(session,gID);
