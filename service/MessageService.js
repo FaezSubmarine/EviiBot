@@ -25,20 +25,24 @@ function findLink(content){
 async function assessLink(links,message){
   let res = await findLinkThenMergeOrDeleteQuery(links,message.guildId,message.author.id);
   return res;
-  //todo: seperate this then make another outcome of repost link
 
 }
 async function messageRepost(links,message){
   links.forEach(async element => {
     await message.channel.send(
-      "HEY GUYS CHECK OUT THIS BRAND NEW LINK I FOUND! " + element
+      "HEY GUYS CHECK OUT THIS BRAND NEW LINK I FOUND! " + element._url
     );
   });
 }
 
 async function DeleteAndNotifyMessage(links,message){
-  //todo: get user who posted the original  link
-  let msgStr = "Woops, deleting your message  because someone else already posted these links: <"+links.join(">\n<")+">"
+  const urlArr = links.map(x=>{return x._url})
+
+  let msgStr = "Woops, deleting your message because"
+  links.forEach(element=>{
+    let user = message.client.users.cache.find((user) => user.id == element._user);
+    msgStr+="\n"+user.displayName+" had already posted "+element._url
+  })
   await message.channel.send(msgStr)
   await message.delete()
 }

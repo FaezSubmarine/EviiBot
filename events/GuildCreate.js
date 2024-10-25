@@ -6,7 +6,6 @@ module.exports = {
     name: Events.GuildCreate,
     once:true,
     async execute(g){
-        console.log("joined a guild with an ID:"+g)
         await mergeGuild([g.id]);
     }
 }

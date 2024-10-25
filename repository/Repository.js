@@ -67,15 +67,14 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
         )
       } else {
         let id = searchRes.records[0]._fields[0];
-        //todo:get user who posted the original link
-        await session.run(
-          `match (u:URL)<--(user:uSER) where elementId(u) = "${id}" 
-           CALL apoc.periodic.cancel("${gID}"+user.uID+"${url}") YIELD name detach delete u 
+        let user = await session.run(
+          `match (u:URL)<--(user:User) where elementId(u) = "${id}" 
+           CALL apoc.periodic.cancel("${gID}"+user.uID+"${url}") YIELD name detach delete u return user.uID
           `);
 
         await deleteHangingUser(session,gID);
 
-        returnStr.push(url);
+        returnStr.push({_url:url,_user:user.records[0]._fields[0]});
       }
       session.close();
     })
@@ -130,7 +129,6 @@ async function checkModeOfEachGuildQuery(gID){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(`MATCH (g:Guild{gID:"${gID}"})--(s:Setting) return s.mode`)
   await session.close();
-  console.log(res.records[0]._fields[0])
   return res.records[0]._fields[0].low;
 }
 

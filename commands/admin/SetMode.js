@@ -7,7 +7,7 @@ module.exports = {
 		.setDescription('Set how Evii Bot react to the repost.')
 		.addStringOption(option=>
 			option.setName('input')
-			.setDescription('0: Response Mode, 1:Delete Mode')
+			.setDescription('0: Response Mode, 1: Delete Mode')
 			.setRequired(true)
 		
 		)
