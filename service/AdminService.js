@@ -1,4 +1,4 @@
-const{updateTimeOutSettingDuration,deleteDueURLQuery,updateBackgroundJobsQuery,ChangeModeQuery} = require('../repository/Repository.js')
+const{updateTimeOutSettingDuration,deleteDueURLQuery,updateBackgroundJobsQuery,ChangeModeQuery,GetURLsQuery} = require('../repository/Repository.js')
 
 const daysAndHoursRegex = /((?<day>[0-9]+)d)?(?<hour>[0-9]+)h/m;
 
@@ -51,6 +51,11 @@ async function updateBackgroundJobs(gID){
 async function ChangeMode(gID,mode){
     await ChangeModeQuery(gID,mode)
 }
+
+async function GetURLs(gID){
+    return await GetURLsQuery(gID)
+}
+
 module.exports={
-    checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs,ChangeMode,CheckInputForMode
+    checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs,ChangeMode,CheckInputForMode, GetURLs
 }

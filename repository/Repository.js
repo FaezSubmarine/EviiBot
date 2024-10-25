@@ -137,6 +137,14 @@ async function ChangeModeQuery(gID,mode){
   await session.run(`MATCH (g:Guild{gID:"${gID}"})--(s:Setting) SET  s.mode = ${mode}`)
   await session.close();
 }
+
+async function GetURLsQuery(gID){
+  let session = driver.session({ database: "neo4j" });
+  let res = await session.run(`MATCH (g:Guild{gID:"${gID}"})--(u:User)--(url:URL) return u.uID,url.body`)
+  await session.close();
+  //console.log(res.records)
+  return res.records;
+}
 module.exports = {
   mergeGuildQuery,
   deleteGuildAndContentQuery,
@@ -145,5 +153,6 @@ module.exports = {
   deleteDueURLQuery,
   updateBackgroundJobsQuery,
   checkModeOfEachGuildQuery,
-  ChangeModeQuery
+  ChangeModeQuery,
+  GetURLsQuery
 };

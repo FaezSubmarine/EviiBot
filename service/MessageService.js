@@ -36,8 +36,6 @@ async function messageRepost(links,message){
 }
 
 async function DeleteAndNotifyMessage(links,message){
-  const urlArr = links.map(x=>{return x._url})
-
   let msgStr = "Woops, deleting your message because"
   links.forEach(element=>{
     let user = message.client.users.cache.find((user) => user.id == element._user);
