@@ -4,7 +4,8 @@ const {
   updateBackgroundJobsQuery,
   ChangeModeQuery,
   GetURLsQuery,
-  getSettingPropertiesQuery
+  getSettingPropertiesQuery,
+  ToggleURLForgetfulnessQuery
 } = require("../repository/Repository.js");
 
 const daysAndHoursRegex = /((?<day>[0-9]+)d)?(?<hour>[0-9]+)h/m;
@@ -91,6 +92,10 @@ function CreateMessageForSettingProperties(res){
     return msg;
 }
 
+async function ToggleURLForgetfulness(gID){
+  return ToggleURLForgetfulnessQuery(gID)
+}
+
 module.exports = {
   checkInput,
   updateTimeOutSetting,
@@ -100,5 +105,6 @@ module.exports = {
   CheckInputForMode,
   GetURLs,
   getSettingProperties,
-  CreateMessageForSettingProperties
+  CreateMessageForSettingProperties,
+  ToggleURLForgetfulness
 };

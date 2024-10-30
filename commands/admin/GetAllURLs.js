@@ -10,7 +10,6 @@ module.exports = {
 			try{
                 let res = await GetURLs(interaction.guildId)
                 let msg = "Sure thing! Here's all the URL I remembered from this server: ";
-				//console.log(res)
                 res.forEach(element => {
 					let user = interaction.client.users.cache.find((user) => user.id == element._fields[0]).displayName;
 					msg+=`\nuser: ${user} URL: <${element._fields[1]}>`
