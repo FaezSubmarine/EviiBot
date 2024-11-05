@@ -1,7 +1,6 @@
 const neo4j = require("neo4j-driver");
 const { Client,Collection, GatewayIntentBits } = require("discord.js");
-const { token } = process.env.TOKEN;
-console.log(token)
+const token = process.env.TOKEN;
 const fs = require('node:fs');
 const path = require('node:path');
 
