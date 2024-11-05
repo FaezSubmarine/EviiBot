@@ -1,6 +1,7 @@
 const neo4j = require("neo4j-driver");
-const { URI, user, password } = require("../config.json");
-
+const URI = process.env.URI;
+const user = process.env.USER;
+const password = process.env.PASSWORD;
 let driver;
 
 const SECOND = BigInt(1000);
