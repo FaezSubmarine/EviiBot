@@ -18,8 +18,9 @@ const DAY = BigInt(86400000);
 })();
 async function mergeGuildQuery(arrayQStr) {
   let session = driver.session({ database: "neo4j" });
+  console.log(arrayQStr)
   await session.run(
-    `WITH [$arrayQStr] AS gIDs
+    `WITH $arrayQStr AS gIDs
      FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element})
       MERGE (g)-[:hasSetting]->(s:Setting)
       ON CREATE SET s.timeOut=duration({hours:1}) ON CREATE SET s.mode = 0 ON CREATE SET s.deleteAfterRepost = TRUE

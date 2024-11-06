@@ -1,8 +1,7 @@
 const {mergeGuildQuery,deleteGuildAndContentQuery,findLinkThenMergeOrDeleteQuery,checkModeOfEachGuildQuery} = require('../repository/Repository.js')
 
 async function mergeGuild(gID){
-    let arrayQStr = `'${gID.join('\',\'')}'`;
-    await mergeGuildQuery(arrayQStr)
+    await mergeGuildQuery(gID)
   }
 async function deleteGuildAndContent(gID){
   await deleteGuildAndContentQuery(gID)
