@@ -18,7 +18,6 @@ const DAY = BigInt(86400000);
 })();
 async function mergeGuildQuery(arrayQStr) {
   let session = driver.session({ database: "neo4j" });
-  console.log(arrayQStr)
   await session.run(
     `WITH $arrayQStr AS gIDs
      FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element})
@@ -43,16 +42,17 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
   await Promise.all(
     urls.map(async (element) => {
       let url = element[0];
+      console.log(url);
       if (urlSet.has(url)) return;
       urlSet.add(url);
 
       let session = driver.session({ database: "neo4j" });
 
       const searchRes = await session.run(
-        `CALL db.index.fulltext.queryNodes("URLIndex",'$url')
-         YIELD node with node WHERE (:Guild{gID:$gID})-[:hasUser]->()-[:posted]->(node)
-         return elementId(node) as id`,{url:url,gID:gID}
+        `MATCH (:Guild{gID:$gID})-->()-->(url:URL{body:$url})
+         return elementId(url) as id`,{url:url,gID:gID}
       );
+      console.log(searchRes)
       if (searchRes.records.length == 0) {
         await session.run(
           `MERGE(u:User {uID:$userID})
@@ -78,10 +78,10 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
                                       
         if(user.records[0]._fields[1]==true){
           await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
-            CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
-           ") YIELD value
-           MATCH (:Guild{gID:$gID})--(n:User) WHERE NOT (n)-->() detach delete n
-            return user.uID`,{id:id,gID:gID});
+  CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
+  WITH u
+  MATCH (:Guild{gID:$gID})--(u) WHERE NOT (u)-->() detach delete u
+  return u.uID`,{id:id,gID:gID});
         }
         returnStr.push({_url:url,_user:user.records[0]._fields[0]});
       }
