@@ -52,23 +52,25 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
         `MATCH (:Guild{gID:$gID})-->()-->(url:URL{body:$url})
          return elementId(url) as id`,{url:url,gID:gID}
       );
-      console.log(searchRes)
       if (searchRes.records.length == 0) {
         await session.run(
-          `MERGE(u:User {uID:$userID})
-           MERGE (g:Guild {gID: $gID}) 
+          `
+          WITH $userID as userID, $gID as gID,$url as url
+          MERGE(u:User {uID:userID})
+           MERGE (g:Guild {gID: gID}) 
            MERGE (g)-[:hasUser]->(u)
-           CREATE (url:URL{body:$url}) set url.datePosted = datetime() CREATE (u)-[:posted]->(url) WITH *
+           CREATE (urlNode:URL{body:url}) set urlNode.datePosted = datetime() 
+           CREATE (u)-[:posted]->(urlNode) WITH *
            MATCH (g)--(se:Setting)
            CALL apoc.periodic.submit(
              $procName,
-             "MATCH (g:Guild{gID: $gID})--(s:Setting)
+             'MATCH (g:Guild{gID:\"'+gID+'\"})--(s:Setting)
              CALL apoc.util.sleep(s.timeOut.Days*86400000+s.timeOut.Seconds*1000)
-             MERGE (u:User{uID:$userID}) WITH u
-             MATCH (g)--(u)--(url:URL{body:$url})
-             DETACH DELETE url
+             MERGE (u:User{uID:\"'+userID+'\"}) WITH u
+             MATCH (g)--(u)--(urlNode:URL{body:\"'+url+'\"})
+             DETACH DELETE urlNode
              WITH g MATCH (g)--(n:User) WHERE NOT (n)-->() detach delete n
-            ")
+            ')
             YIELD name return name`
         ,{userID:userID,gID:gID,procName:gID+userID+url,url:url})
       } else {
@@ -78,8 +80,8 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
                                       
         if(user.records[0]._fields[1]==true){
           await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
-  CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
-  WITH u
+                             CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
+                             WITH u
   MATCH (:Guild{gID:$gID})--(u) WHERE NOT (u)-->() detach delete u
   return u.uID`,{id:id,gID:gID});
         }
