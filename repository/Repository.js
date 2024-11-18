@@ -3,9 +3,6 @@ const URI = process.env.URI;
 const user = process.env.USER;
 const password = process.env.PASSWORD;
 let driver;
-
-const SECOND = BigInt(1000);
-const DAY = BigInt(86400000);
 (async () => {
   try {
     driver = neo4j.driver(URI, neo4j.auth.basic(user, password));
