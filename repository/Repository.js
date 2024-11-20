@@ -31,6 +31,7 @@ async function deleteGuildAndContentQuery(gID) {
     ,{gID:gID});
   await session.close();
 }
+//TODO: CANT GET ID AFTER DELETING NODE
 async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
   //the set was used to avoid duplicate URL in a single message to trigger the bot
   let urlSet = new Set();
@@ -79,8 +80,8 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
           await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
                              CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
                              WITH u
-  MATCH (:Guild{gID:$gID})--(u) WHERE NOT (u)-->() detach delete u
-  return u.uID`,{id:id,gID:gID});
+                             MATCH (:Guild{gID:$gID})--(u) WHERE NOT (u)-->() detach delete u
+                             return u.uID`,{id:id,gID:gID});
         }
         returnStr.push({_url:url,_user:user.records[0]._fields[0]});
       }
@@ -155,6 +156,15 @@ async function ToggleURLForgetfulnessQuery(gID){
   await session.close();
   return res.records[0]._fields[0];
 }
+
+async function DirectForgetLinkQuery(gID,url){
+  let session = driver.session({ database: "neo4j" });
+  let res = await session.run(`
+    MATCH (g:Guild{gID: $gID})--(u:User)--(url:URL{body: $url}) 
+    Detach delete url with g,u match (g)--(u)  where NOT (u)-->() detach delete u`,{gID:gID,url:url},{ database: "neo4j" });
+  await session.close();
+  return res.summary.counters._stats.nodesDeleted;
+}
 module.exports = {
   mergeGuildQuery,
   deleteGuildAndContentQuery,
@@ -165,5 +175,6 @@ module.exports = {
   ChangeModeQuery,
   GetURLsQuery,
   getSettingPropertiesQuery,
-  ToggleURLForgetfulnessQuery
+  ToggleURLForgetfulnessQuery,
+  DirectForgetLinkQuery
 };
