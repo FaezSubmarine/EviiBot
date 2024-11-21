@@ -20,7 +20,7 @@ async function mergeGuildQuery(arrayQStr) {
      FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element})
       MERGE (g)-[:hasSetting]->(s:Setting)
       ON CREATE SET s.timeOut=duration({hours:1}) ON CREATE SET s.mode = 0 ON CREATE SET s.deleteAfterRepost = TRUE
-     )`,{arrayQStr:arrayQStr}
+     )`,{arrayQStr:arrayQStr},{ database: "neo4j" }
   );
   await session.close();
 }
@@ -28,7 +28,7 @@ async function deleteGuildAndContentQuery(gID) {
   let session = driver.session({ database: "neo4j" });
   await session.run(
     `MATCH (g:Guild{gID:$gID})--(s:Setting) MATCH (g)--(u:User)--(r:URL) DETACH DELETE g DETACH DELETE u DETACH DELETE r DELETE s`
-    ,{gID:gID});
+    ,{gID:gID},{ database: "neo4j" });
   await session.close();
 }
 async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
@@ -120,20 +120,20 @@ async function updateBackgroundJobsQuery(gID){
 
 async function checkModeOfEachGuildQuery(gID){
   let session = driver.session({ database: "neo4j" });
-  let res = await session.run(`MATCH (g:Guild{gID:$gID})--(s:Setting) return s.mode`,{gID:gID})
+  let res = await session.run(`MATCH (g:Guild{gID:$gID})--(s:Setting) return s.mode`,{gID:gID},{ database: "neo4j" })
   await session.close();
   return res.records[0]._fields[0].low;
 }
 
 async function ChangeModeQuery(gID,mode){
   let session = driver.session({ database: "neo4j" });
-  await session.run(`MATCH (g:Guild{gID:$gID})--(s:Setting) SET  s.mode = $mode`,{gID:gID,mode:mode})
+  await session.run(`MATCH (g:Guild{gID:$gID})--(s:Setting) SET  s.mode = $mode`,{gID:gID,mode:mode},{ database: "neo4j" })
   await session.close();
 }
 
 async function GetURLsQuery(gID){
   let session = driver.session({ database: "neo4j" });
-  let res = await session.run(`MATCH (g:Guild{gID:$gID})--(u:User)--(url:URL) return u.uID,url.body`,{gID:gID})
+  let res = await session.run(`MATCH (g:Guild{gID:$gID})--(u:User)--(url:URL) return u.uID,url.body`,{gID:gID},{ database: "neo4j" })
   await session.close();
   return res.records;
 }
@@ -141,7 +141,7 @@ async function GetURLsQuery(gID){
 async function getSettingPropertiesQuery(gID){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(
-    `MATCH (g:Guild{gID:$gID})--(s:Setting) return properties(s)`,{gID:gID})
+    `MATCH (g:Guild{gID:$gID})--(s:Setting) return properties(s)`,{gID:gID},{ database: "neo4j" })
   await session.close();
   return res.records[0]._fields[0];
 }
@@ -151,7 +151,7 @@ async function ToggleURLForgetfulnessQuery(gID){
   let res = await session.run(
     `MATCH (:Guild{gID:$gID})--(s:Setting) 
     SET s.deleteAfterRepost= NOT s.deleteAfterRepost 
-    return s.deleteAfterRepost as repostBool`,{gID:gID})
+    return s.deleteAfterRepost as repostBool`,{gID:gID},{ database: "neo4j" })
   await session.close();
   return res.records[0]._fields[0];
 }
