@@ -31,7 +31,6 @@ async function deleteGuildAndContentQuery(gID) {
     ,{gID:gID});
   await session.close();
 }
-//TODO: CANT GET ID AFTER DELETING NODE
 async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
   //the set was used to avoid duplicate URL in a single message to trigger the bot
   let urlSet = new Set();
@@ -48,7 +47,7 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
 
       const searchRes = await session.run(
         `MATCH (:Guild{gID:$gID})-->()-->(url:URL{body:$url})
-         return elementId(url) as id`,{url:url,gID:gID}
+         return elementId(url) as id`,{url:url,gID:gID},{ database: "neo4j" }
       );
       if (searchRes.records.length == 0) {
         await session.run(
@@ -70,18 +69,18 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
              WITH g MATCH (g)--(n:User) WHERE NOT (n)-->() detach delete n
             ')
             YIELD name return name`
-        ,{userID:userID,gID:gID,procName:gID+userID+url,url:url})
+        ,{userID:userID,gID:gID,procName:gID+userID+url,url:url},{ database: "neo4j" })
       } else {
         let id = searchRes.records[0]._fields[0];
         let user = await session.run(`match (u:URL)<--(user:User)<--(:Guild)-->(s:Setting) where elementId(u) = $id 
-                                      return user.uID as user,s.deleteAfterRepost as setting`,{id:id})
-                                      
+                                      return user.uID as user,s.deleteAfterRepost as setting`,{id:id},{ database: "neo4j" })
+        
         if(user.records[0]._fields[1]==true){
-          await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
-                             CALL apoc.periodic.cancel(g.gID+u.uID+url.body) YIELD name detach delete url
-                             WITH u
-                             MATCH (:Guild{gID:$gID})--(u) WHERE NOT (u)-->() detach delete u
-                             return u.uID`,{id:id,gID:gID});
+          let deleteRes = await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
+                                             with (g.gID+u.uID+url.body) as procName, u,url
+                                             CALL apoc.periodic.cancel(procName) YIELD name detach delete url
+                                             WITH u
+                                            MATCH (u) WHERE NOT (u)-->() detach delete u`,{id:id},{ database: "neo4j" });
         }
         returnStr.push({_url:url,_user:user.records[0]._fields[0]});
       }
@@ -114,7 +113,7 @@ async function updateBackgroundJobsQuery(gID){
   	          DETACH DELETE url
   	          WITH g,u WHERE NOT (u)-->() detach delete u
             ")
-       YIELD name as secondName return secondName`,{gID:gID}
+       YIELD name as secondName return secondName`,{gID:gID},{ database: "neo4j" }
   );
   await session.close();
 }

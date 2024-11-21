@@ -13,6 +13,7 @@ module.exports = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 		async execute(interaction) {
 			try{
+				//TODO: turn this into multiple urls
 				let url = interaction.options.getString("url")
 				let res = await DirectForgetLink(interaction.guildId,url)
                 await interaction.reply(res==0?(`Hmmm, I never seen ${url} before`):(`Got it! ${url} has been forgotten`));  
