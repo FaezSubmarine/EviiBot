@@ -1,6 +1,6 @@
 const { SlashCommandBuilder,PermissionFlagsBits } = require('discord.js');
 const {DirectForgetLink} = require('../../service/AdminService.js');
-
+const {findLink} = require('../../service/MessageService.js')
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('directlyforgetlink')
@@ -14,9 +14,20 @@ module.exports = {
 		async execute(interaction) {
 			try{
 				//TODO: turn this into multiple urls
-				let url = interaction.options.getString("url")
-				let res = await DirectForgetLink(interaction.guildId,url)
-                await interaction.reply(res==0?(`Hmmm, I never seen ${url} before`):(`Got it! ${url} has been forgotten`));  
+				let URLs = findLink(interaction.options.getString("url"))
+				if(URLs.length==0){
+					await interaction.reply(`Oops, looks like you didnt post any URLs. Please try again`);
+					return;
+				}
+				let res = await DirectForgetLink(interaction.guildId,URLs)
+				let msg = "";
+				console.log(res)
+				for(let i = 0;i< URLs.length;++i){
+					let element = res[i]._fields[0];
+					msg+= element?(`Hmmm, I never seen <${URLs[i]}> before\n`):
+								  (`Got it! <${URLs[i]}> has been forgotten\n`)
+				}
+                await interaction.reply(msg);  
 			}
 			catch(e){
 				console.log(e)

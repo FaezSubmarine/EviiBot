@@ -101,7 +101,7 @@ async function updateTimeOutSettingDuration(changes, guild) {
 async function updateBackgroundJobsQuery(gID){
   let session = driver.session({ database: "neo4j" });
   await session.run(
-    `Match paths=(g:Guild{gID:$gID)--(u:User)--(url:URL) with g.gID+u.uID+url.body as jobIDs
+    `Match paths=(g:Guild{gID:$gID})--(u:User)--(url:URL) with g.gID+u.uID+url.body as jobIDs
      UNWIND jobIDs as jobID CALL apoc.periodic.cancel(jobID) YIELD name
            CALL apoc.periodic.submit(
              name,
@@ -156,13 +156,25 @@ async function ToggleURLForgetfulnessQuery(gID){
   return res.records[0]._fields[0];
 }
 
-async function DirectForgetLinkQuery(gID,url){
+async function DirectForgetLinkQuery(gID,URLs){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(`
-    MATCH (g:Guild{gID: $gID})--(u:User)--(url:URL{body: $url}) 
-    Detach delete url with g,u match (g)--(u)  where NOT (u)-->() detach delete u`,{gID:gID,url:url},{ database: "neo4j" });
+CREATE (n:var{arr:[]})
+with $URLs as URLs,n
+CALL(URLs,n){
+  UNWIND URLs as element
+  OPTIONAL MATCH (g:Guild{gID: $gID})--(u:User)--(url:URL{body: element}) 
+  SET n.arr=n.arr+[url IS NULL]
+  Detach delete url with g,u match (g)--(u) where NOT (u)-->() detach delete u
+}
+with n,n.arr as res
+DELETE n
+with res
+UNWIND res as element
+RETURN element
+    `,{gID:gID,URLs:URLs},{ database: "neo4j" });
   await session.close();
-  return res.summary.counters._stats.nodesDeleted;
+  return res.records;
 }
 module.exports = {
   mergeGuildQuery,
