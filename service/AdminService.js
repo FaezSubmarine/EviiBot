@@ -6,7 +6,8 @@ const {
   GetURLsQuery,
   getSettingPropertiesQuery,
   ToggleURLForgetfulnessQuery,
-  DirectForgetLinkQuery
+  DirectForgetLinkQuery,
+  verifyConnectivityQuery
 } = require("../repository/Repository.js");
 
 const daysAndHoursRegex = /((?<day>[0-9]+)d)?(?<hour>[0-9]+)h/m;
@@ -101,6 +102,10 @@ async function DirectForgetLink(gID,url){
   return DirectForgetLinkQuery(gID,url)
 }
 
+async function verifyConnectivity(){
+  return await verifyConnectivityQuery();
+}
+
 module.exports = {
   checkInput,
   updateTimeOutSetting,
@@ -112,5 +117,6 @@ module.exports = {
   getSettingProperties,
   CreateMessageForSettingProperties,
   ToggleURLForgetfulness,
-  DirectForgetLink
+  DirectForgetLink,
+  verifyConnectivity
 };

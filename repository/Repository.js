@@ -178,6 +178,10 @@ RETURN element
   await session.close();
   return res.records;
 }
+
+async function verifyConnectivityQuery(){
+  return await driver.getServerInfo();
+}
 module.exports = {
   mergeGuildQuery,
   deleteGuildAndContentQuery,
@@ -189,5 +193,6 @@ module.exports = {
   GetURLsQuery,
   getSettingPropertiesQuery,
   ToggleURLForgetfulnessQuery,
-  DirectForgetLinkQuery
+  DirectForgetLinkQuery,
+  verifyConnectivityQuery
 };
