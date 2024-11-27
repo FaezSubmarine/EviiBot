@@ -76,7 +76,7 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
                                       return user.uID as user,s.deleteAfterRepost as setting`,{id:id},{ database: "neo4j" })
         
         if(user.records[0]._fields[1]==true){
-          let deleteRes = await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
+          await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
                                              with (g.gID+u.uID+url.body) as procName, u,url
                                              CALL apoc.periodic.cancel(procName) YIELD name detach delete url
                                              WITH u
@@ -122,7 +122,9 @@ async function checkModeOfEachGuildQuery(gID){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(`MATCH (g:Guild{gID:$gID})--(s:Setting) return s.mode`,{gID:gID},{ database: "neo4j" })
   await session.close();
-  return res.records[0]._fields[0].low;
+  // returns 0 or 1
+  // 0: Response Mode, 1: Delete Mode
+  return res.records[0]._fields[0];
 }
 
 async function ChangeModeQuery(gID,mode){
