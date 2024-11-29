@@ -9,7 +9,7 @@ module.exports = {
 		async execute(interaction) {
 			try{
 				let res = await ToggleURLForgetfulness(interaction.guildId)
-                await interaction.reply(`Gotcha, I will ${(res==true)?``:`not `}forget this link after a repost`);  
+                await interaction.reply(`Gotcha, I will ${(res==true)?``:`not `}forget links after a repost`);  
 			}
 			catch(e){
 				console.log(e)
