@@ -93,8 +93,8 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
 async function updateTimeOutSettingDuration(changes, guild) {
   let session = driver.session({ database: "neo4j" });
   await session.run(
-    `MATCH (:Guild{gID:"$guild"})--(s:Setting) 
-    SET s.timeOut = duration({days:$day,hours:$hour)`,
+    `MATCH (:Guild{gID:$guild})--(s:Setting) 
+    SET s.timeOut = duration({days:$day,hours:$hour})`,
     {guild:guild,day:changes.day,hour:changes.hour});
   await session.close();
 }

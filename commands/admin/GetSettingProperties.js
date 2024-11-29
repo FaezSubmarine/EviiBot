@@ -9,7 +9,6 @@ module.exports = {
 		async execute(interaction) {
 			try{
                 let res = await getSettingProperties(interaction.guildId)
-
                 
                 await interaction.reply(CreateMessageForSettingProperties(res));  
 			}

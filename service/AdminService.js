@@ -1,6 +1,5 @@
 const {
   updateTimeOutSettingDuration,
-  deleteDueURLQuery,
   updateBackgroundJobsQuery,
   ChangeModeQuery,
   GetURLsQuery,
@@ -10,21 +9,25 @@ const {
   verifyConnectivityQuery
 } = require("../repository/Repository.js");
 
-const daysAndHoursRegex = /((?<day>[0-9]+)d)?(?<hour>[0-9]+)h/m;
+const daysAndHoursRegex = /((?<day>[0-9]+d))?(?<hour>[0-9]+h)?/;
 
 const HARDLIMITONDAYS = 7;
 function checkInput(interaction) {
   let str = interaction.options.getString("input");
 
   const res = daysAndHoursRegex.exec(str);
+  //Acceptable inputs should be:
+  //1d1h
+  //10d10h
+  //10d
+  //10h
   if (res == null) {
     throw "Oops, that's not how you do an input!";
   }
   let { day, hour } = res.groups;
-  if (isNaN(day)) day = 0;
 
-  let noOfDays = Number(day);
-  let noOfHours = Number(hour);
+  let noOfDays = (day  ===undefined)  ?0:Number(day.substring(0,day.length-1));
+  let noOfHours = (hour===undefined)  ?0:Number(hour.substring(0,hour.length-1));
   if (noOfDays == 0 && noOfHours == 0) {
     throw "Oops, you can't set it all at 0";
   }
@@ -33,7 +36,9 @@ function checkInput(interaction) {
     noOfDays += additionalDays;
     noOfHours = noOfHours % 24;
   }
-  if (noOfDays >= HARDLIMITONDAYS) {
+  if ((noOfDays > HARDLIMITONDAYS) ||
+      (noOfDays == HARDLIMITONDAYS && noOfHours>0)
+    ) {
     throw "Oops, you're going above the limit!";
   }
   return { day: noOfDays, hour: noOfHours };
@@ -78,12 +83,13 @@ function CreateMessageForSettingProperties(res){
                    `${intDays} days and `;
     const msgHour = (intHours == 1)?`1 hour`: `${intHours} hours`
     let msgMode = ""
-    switch (res.mode.low){
-        case 0:
+    console.log(res.mode)
+    switch (res.mode){
+        case "0":
             msgMode = "0: Response Mode"
             break;
-        case 1:
-            msgMode = "1) Delete Mode"
+        case "1":
+            msgMode = "1: Delete Mode"
             break;
     } 
 
