@@ -1,5 +1,5 @@
 const { SlashCommandBuilder,PermissionFlagsBits } = require('discord.js');
-const {checkInput,updateTimeOutSetting,deleteDueURL,updateBackgroundJobs} = require('../../service/AdminService.js');
+const {checkInput,updateTimeOutSetting} = require('../../service/AdminService.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('settimeout')
@@ -14,7 +14,6 @@ module.exports = {
 			try{
 				const res = checkInput(interaction);
 				await updateTimeOutSetting(res,interaction.guildId)
-				await updateBackgroundJobs(interaction.guildId)
 				await interaction.reply(`successfully set time at ${res.day} day and ${res.hour} hour`)
 			}
 			catch(e){

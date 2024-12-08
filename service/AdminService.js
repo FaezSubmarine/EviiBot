@@ -1,6 +1,5 @@
 const {
   updateTimeOutSettingDuration,
-  updateBackgroundJobsQuery,
   ChangeModeQuery,
   GetURLsQuery,
   getSettingPropertiesQuery,
@@ -54,14 +53,6 @@ function CheckInputForMode(interaction) {
 async function updateTimeOutSetting(changes, guild) {
   await updateTimeOutSettingDuration(changes, guild);
 }
-
-async function deleteDueURL(res, gID) {
-  await deleteDueURLQuery(res, gID);
-}
-async function updateBackgroundJobs(gID) {
-  await updateBackgroundJobsQuery(gID);
-}
-
 async function ChangeMode(gID, mode) {
   await ChangeModeQuery(gID, mode);
 }
@@ -83,12 +74,11 @@ function CreateMessageForSettingProperties(res){
                    `${intDays} days and `;
     const msgHour = (intHours == 1)?`1 hour`: `${intHours} hours`
     let msgMode = ""
-    console.log(res.mode)
-    switch (res.mode){
-        case "0":
+    switch (res.mode.low){
+        case 0:
             msgMode = "0: Response Mode"
             break;
-        case "1":
+        case 1:
             msgMode = "1: Delete Mode"
             break;
     } 
@@ -115,8 +105,6 @@ async function verifyConnectivity(){
 module.exports = {
   checkInput,
   updateTimeOutSetting,
-  deleteDueURL,
-  updateBackgroundJobs,
   ChangeMode,
   CheckInputForMode,
   GetURLs,
