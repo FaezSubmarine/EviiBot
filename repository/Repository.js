@@ -46,7 +46,7 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
       let session = driver.session({ database: "neo4j" });
 
       const searchRes = await session.run(
-        `MATCH (:Guild{gID:$gID})-->()-->(url:URL{body:$url})
+        `MATCH (g:Guild)-->()-->(url:URL{body:$url}) where g.gID = $gID
          return elementId(url) as id`,{url:url,gID:gID},{ database: "neo4j" }
       );
       if (searchRes.records.length == 0) {
@@ -56,22 +56,15 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
            MERGE (g)-[:hasUser]->(u:User {uID:userID})
            CREATE (urlNode:URL{body:url}) set urlNode.datePosted = datetime() 
            CREATE (u)-[:posted]->(urlNode) WITH *
-           MATCH (g)--(se:Setting)
            return g`
         ,{userID:userID,gID:gID,procName:gID+userID+url,url:url},{ database: "neo4j" })
       } else {
         let id = searchRes.records[0]._fields[0];
-        let user = await session.run(`match (u:URL)<--(user:User)<--(:Guild)-->(s:Setting) where elementId(u) = $id 
-                                      return user.uID as user,s.deleteAfterRepost as setting`,{id:id},{ database: "neo4j" })
+        let res = await session.run(`match (url:URL)<--(u:User)<--(g:Guild)-->(s:Setting) where elementId(url) = $id
+                                      with u,CASE s.deleteAfterRepost WHEN true THEN url ELSE NULL end as urlRes
+                                      DETACH DELETE urlRes with u,u.uID as uID MATCH (u) WHERE NOT (u)-->() detach delete u return uID`,{id:id},{ database: "neo4j" });
         
-        if(user.records[0]._fields[1]==true){
-          await session.run(`match (url:URL)<--(u:User)<--(g:Guild) where elementId(url) = $id
-                                             with (g.gID+u.uID+url.body) as procName, u,url
-                                             CALL apoc.periodic.cancel(procName) YIELD name detach delete url
-                                             WITH u
-                                            MATCH (u) WHERE NOT (u)-->() detach delete u`,{id:id},{ database: "neo4j" });
-        }
-        returnStr.push({_url:url,_user:user.records[0]._fields[0]});
+        returnStr.push({_url:url,_user:res.records[0]._fields[0]});
       }
       session.close();
     })
@@ -94,7 +87,7 @@ async function checkModeOfEachGuildQuery(gID){
   await session.close();
   // returns 0 or 1
   // 0: Response Mode, 1: Delete Mode
-  return res.records[0]._fields[0];
+  return res.records[0]._fields[0].low;
 }
 
 async function ChangeModeQuery(gID,mode){
@@ -113,7 +106,7 @@ async function GetURLsQuery(gID){
 async function getSettingPropertiesQuery(gID){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(
-    `MATCH (g:Guild{gID:$gID})--(s:Setting) return properties(s)`,{gID:gID},{ database: "neo4j" })
+    `MATCH (g:Guild{gID:$gID})-->(s:Setting) return properties(s)`,{gID:gID},{ database: "neo4j" })
   await session.close();
   return res.records[0]._fields[0];
 }
@@ -121,7 +114,7 @@ async function getSettingPropertiesQuery(gID){
 async function ToggleURLForgetfulnessQuery(gID){
   let session = driver.session({ database: "neo4j" });
   let res = await session.run(
-    `MATCH (:Guild{gID:$gID})--(s:Setting) 
+    `MATCH (:Guild{gID:$gID})-->(s:Setting) 
     SET s.deleteAfterRepost= NOT s.deleteAfterRepost 
     return s.deleteAfterRepost as repostBool`,{gID:gID},{ database: "neo4j" })
   await session.close();
@@ -148,7 +141,8 @@ async function DirectForgetLinkQuery(gID,URLs){
   await session.close();
   return res.records;
 }
-
+//TODO replace (g:Guild{gID: $gID}) with WHERE g.gID = $gID
+//based on https://neo4j.com/docs/cypher-manual/5/indexes/search-performance-indexes/managing-indexes/#create-a-single-property-range-index-for-nodes
 async function verifyConnectivityQuery(){
   return await driver.getServerInfo();
 }

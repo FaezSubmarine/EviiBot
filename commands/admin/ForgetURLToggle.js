@@ -4,7 +4,7 @@ const {ToggleURLForgetfulness} = require('../../service/AdminService.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('forgeturltoggle')
-		.setDescription('Gets all the URLs Evii Bot remembered.')
+		.setDescription('If enabled, the bot will forget links after the repost had been posted.')
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 		async execute(interaction) {
 			try{

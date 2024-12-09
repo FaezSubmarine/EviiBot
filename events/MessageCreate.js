@@ -12,10 +12,10 @@ module.exports = {
         if(res.length == 0)return;
         let checkMode = await checkModeOfEachGuild(message.guildId)
         switch(checkMode){
-            case "0":
+            case 0:
                 await messageRepost(res,message)
                 break
-            case "1":
+            case 1:
                 await DeleteAndNotifyMessage(res,message)
                 break
         }
