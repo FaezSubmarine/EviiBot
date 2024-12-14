@@ -13,7 +13,6 @@ module.exports = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 		async execute(interaction) {
 			try{
-				//TODO: turn this into multiple urls
 				let URLs = findLink(interaction.options.getString("url"))
 				if(URLs.length==0){
 					await interaction.reply(`Oops, looks like you didnt post any URLs. Please try again`);

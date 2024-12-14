@@ -15,12 +15,16 @@ let driver;
 })();
 async function mergeGuildQuery(arrayQStr) {
   let session = driver.session({ database: "neo4j" });
-  await session.run(
-    `WITH $arrayQStr AS gIDs
-     FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element})
-      MERGE (g)-[:hasSetting]->(s:Setting)
-      ON CREATE SET s.timeOut=duration({hours:1}) ON CREATE SET s.mode = 0 ON CREATE SET s.deleteAfterRepost = TRUE
-     )`,{arrayQStr:arrayQStr},{ database: "neo4j" }
+  await session.run(`
+    WITH $arrayQStr AS gIDs
+    FOREACH ( element IN gIDs | MERGE (g:Guild{gID:element})
+     MERGE (g)-[:hasSetting]->(s:Setting)
+     ON CREATE SET s.timeOut=duration({hours:1}) 
+     ON CREATE SET s.mode = 0 
+     ON CREATE SET s.deleteAfterRepost = TRUE
+     ON CREATE SET s.URLIgnoreList = $defaultURLIgnoreList
+     ON CREATE SET s.userIgnoreList = []
+    )`,{arrayQStr:arrayQStr,defaultURLIgnoreList:["tenor"]},{ database: "neo4j" }
   );
   await session.close();
 }
@@ -45,11 +49,22 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
 
       let session = driver.session({ database: "neo4j" });
 
-      const searchRes = await session.run(
-        `MATCH (g:Guild)-->()-->(url:URL{body:$url}) where g.gID = $gID
-         return elementId(url) as id`,{url:url,gID:gID},{ database: "neo4j" }
+      //outputs two fields: id and check
+      //[0] outputs an ID in string if the url exists in the database
+      //[1] outputs a bool that ouputs true if the user is not in the ignore list AND the URL itself isn't ignore
+      const searchRes = await session.run(`
+        MATCH (s:Setting)<--(g:Guild{gID: $gID})
+        OPTIONAL MATCH (g)-->(u:User)-->(url:URL{body: $url})
+        with (NOT $userID in s.userIgnoreList AND not any(word IN s.URLIgnoreList WHERE $url CONTAINS word)) as check,url
+        return elementId(url) as id,check`
+        ,{url:url,userID:userID,gID:gID},{ database: "neo4j" }
       );
-      if (searchRes.records.length == 0) {
+      console.log(searchRes.records[0]._fields[1]);
+      if(searchRes.records[0]._fields[1]==false){
+        return;
+      }
+      console.log(searchRes.records[0]._fields[0]);
+      if (searchRes.records[0]._fields[0] == null) {
         await session.run(
           `WITH $userID as userID, $gID as gID,$url as url
            MERGE (g:Guild {gID: gID}) 
@@ -57,12 +72,13 @@ async function findLinkThenMergeOrDeleteQuery(urls, gID, userID) {
            CREATE (urlNode:URL{body:url}) set urlNode.datePosted = datetime() 
            CREATE (u)-[:posted]->(urlNode) WITH *
            return g`
-        ,{userID:userID,gID:gID,procName:gID+userID+url,url:url},{ database: "neo4j" })
+        ,{userID:userID,gID:gID,url:url},{ database: "neo4j" })
       } else {
         let id = searchRes.records[0]._fields[0];
-        let res = await session.run(`match (url:URL)<--(u:User)<--(g:Guild)-->(s:Setting) where elementId(url) = $id
+        const res = await session.run(`match (url:URL)<--(u:User)<--(g:Guild)-->(s:Setting) where elementId(url) = $id
                                       with u,CASE s.deleteAfterRepost WHEN true THEN url ELSE NULL end as urlRes
-                                      DETACH DELETE urlRes with u,u.uID as uID MATCH (u) WHERE NOT (u)-->() detach delete u return uID`,{id:id},{ database: "neo4j" });
+                                      DETACH DELETE urlRes with u,u.uID as uID MATCH (u) WHERE NOT (u)-->() detach delete u return uID`
+                                      ,{id:id},{ database: "neo4j" });
         
         returnStr.push({_url:url,_user:res.records[0]._fields[0]});
       }
@@ -141,8 +157,6 @@ async function DirectForgetLinkQuery(gID,URLs){
   await session.close();
   return res.records;
 }
-//TODO replace (g:Guild{gID: $gID}) with WHERE g.gID = $gID
-//based on https://neo4j.com/docs/cypher-manual/5/indexes/search-performance-indexes/managing-indexes/#create-a-single-property-range-index-for-nodes
 async function verifyConnectivityQuery(){
   return await driver.getServerInfo();
 }
