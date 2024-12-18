@@ -4,7 +4,7 @@ const {findLink} = require('../../service/MessageService.js')
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('directlyforgetlink')
-		.setDescription('The bot works by storing the link in a database, then.')
+		.setDescription('Remove a link thats stored in the database')
 		.addStringOption(option=>
 			option.setName('url')
 			.setDescription('the exact url you want the bot to forget')

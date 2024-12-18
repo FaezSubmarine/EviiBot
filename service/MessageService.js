@@ -6,7 +6,6 @@ async function mergeGuild(gID){
 async function deleteGuildAndContent(gID){
   await deleteGuildAndContentQuery(gID)
 }
-
 function findLink(content){
   const regex =
   /(?:http[s]?:\/\/[www]?.)[A-Za-z0-9.-]+(?:\/[\+~%\/.\w_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*)/g;

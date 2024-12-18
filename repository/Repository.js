@@ -126,10 +126,40 @@ async function getSettingPropertiesQuery(gID){
   await session.close();
   return res.records[0]._fields[0];
 }
+async function insertDomainIntoIgnoreListQuery(gID,domains){
+  let session = driver.session({ database: "neo4j" });
 
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      MATCH (g:Guild{gID:$gID})-->(s:Setting)
+      SET s.URLIgnoreList = s.URLIgnoreList+$domains
+      return $domains
+      `,{gID:gID,domains:domains}
+    )
+  })
+
+  await session.close();
+  return res.records[0]._fields[0];
+}
+
+async function insertUserIntoIgnoreListQuery(gID,users){
+  let session = driver.session({ database: "neo4j" });
+
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      MATCH (g:Guild{gID:$gID})-->(s:Setting)
+      SET s.userIgnoreList = s.userIgnoreList+$users
+      return $users
+      `,{gID:gID,users:users}
+    )
+  })
+
+  await session.close();
+  return res.records[0]._fields[0];
+}
 async function ToggleURLForgetfulnessQuery(gID){
   let session = driver.session({ database: "neo4j" });
-  let res = await session.run(
+  const res = await session.run(
     `MATCH (:Guild{gID:$gID})-->(s:Setting) 
     SET s.deleteAfterRepost= NOT s.deleteAfterRepost 
     return s.deleteAfterRepost as repostBool`,{gID:gID},{ database: "neo4j" })
@@ -171,5 +201,7 @@ module.exports = {
   getSettingPropertiesQuery,
   ToggleURLForgetfulnessQuery,
   DirectForgetLinkQuery,
+  insertDomainIntoIgnoreListQuery,
+  insertUserIntoIgnoreListQuery,
   verifyConnectivityQuery
 };
