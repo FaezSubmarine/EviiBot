@@ -1,12 +1,12 @@
 const { SlashCommandBuilder,PermissionFlagsBits } = require('discord.js');
-const {insertUserIntoIgnoreList} = require('../../service/AdminService.js');
+const {removeUserFromIgnoreList} = require('../../service/AdminService.js');
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('addtouserignorelist')
-		.setDescription('give the bot usernames to ignore their link')
+		.setName('removefromuserignorelist')
+		.setDescription('Remove a user from the user ignore list')
 		.addStringOption(option=>
 			option.setName('user')
-			.setDescription('enter the username IE NOT the display name but the name below it')
+			.setDescription('give the bot a username to remove')
 			.setRequired(true)
 		)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -25,15 +25,19 @@ module.exports = {
                     await interaction.reply("woops, looks your input does not match any username I know of");
 					return;
                 }
-				let userRes = await insertUserIntoIgnoreList(interaction.guildId,userIDs)
-				let msg = "Got it! Added ";
+				let userRes = await removeUserFromIgnoreList(interaction.guildId,userIDs)
+                if(userRes.length==0){
+                    await interaction.reply("Hmm, the URL you've given me does not match anything in the URL ignore list.");
+                    return;  
+                }
+				let msg = "Got it! Removed ";
 				for(let i = 0;i< userRes.length;++i){
-					let username = res.find(u=>{
+                    let username = res.find(u=>{
 						return u.user.id==userRes[i]
 					}).user.username
 					msg+= (i==userRes.length-1 && userRes.length!=1)?(`and ${username} `):(username+" ")
 				}
-                msg+= "into the user ignore list."
+                msg+= "from the URL ignore list."
                 await interaction.reply(msg);  
 			}
 			catch(e){

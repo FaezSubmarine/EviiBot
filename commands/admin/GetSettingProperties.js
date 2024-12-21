@@ -9,8 +9,8 @@ module.exports = {
 		async execute(interaction) {
 			try{
                 let res = await getSettingProperties(interaction.guildId)
-                
-                await interaction.reply(CreateMessageForSettingProperties(res));  
+                let userRes = await interaction.guild.members.fetch()
+                await interaction.reply(CreateMessageForSettingProperties(res,userRes));  
 			}
 			catch(e){
 				await interaction.reply(e);

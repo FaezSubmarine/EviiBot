@@ -142,6 +142,37 @@ async function insertDomainIntoIgnoreListQuery(gID,domains){
   return res.records[0]._fields[0];
 }
 
+async function removeDomainFromIgnoreListQuery(gID,domains){
+  let session = driver.session({ database: "neo4j" });
+
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      match (g:Guild{gID: $gID})-->(s:Setting)
+      with [x in s.URLIgnoreList where x in $domains] as result,s
+      set s.URLIgnoreList = [x in s.URLIgnoreList where NOT x in $domains] return result
+      `,{gID:gID,domains:domains}
+    )
+  })
+
+  await session.close();
+  return res.records[0]._fields[0];
+}
+
+async function removeUserFromIgnoreListQuery(gID,users){
+  let session = driver.session({ database: "neo4j" });
+
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      match (g:Guild{gID: $gID})-->(s:Setting)
+      with [x in s.userIgnoreList where x in $users] as result,s
+      set s.userIgnoreList = [x in s.userIgnoreList where NOT x in $users] return result
+      `,{gID:gID,users:users}
+    )
+  })
+
+  await session.close();
+  return res.records[0]._fields[0];
+}
 async function insertUserIntoIgnoreListQuery(gID,users){
   let session = driver.session({ database: "neo4j" });
 
@@ -202,6 +233,8 @@ module.exports = {
   ToggleURLForgetfulnessQuery,
   DirectForgetLinkQuery,
   insertDomainIntoIgnoreListQuery,
+  removeDomainFromIgnoreListQuery,
+  removeUserFromIgnoreListQuery,
   insertUserIntoIgnoreListQuery,
   verifyConnectivityQuery
 };

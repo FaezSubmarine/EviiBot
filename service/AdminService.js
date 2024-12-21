@@ -7,6 +7,8 @@ const {
   DirectForgetLinkQuery,
   insertDomainIntoIgnoreListQuery,
   insertUserIntoIgnoreListQuery,
+  removeUserFromIgnoreListQuery,
+  removeDomainFromIgnoreListQuery,
   verifyConnectivityQuery
 } = require("../repository/Repository.js");
 
@@ -70,12 +72,17 @@ async function getSettingProperties(gID) {
 async function insertDomainIntoIgnoreList(gID,domains){
   return await insertDomainIntoIgnoreListQuery(gID,domains)
 }
-
+async function removeDomainFromIgnoreList(gID,domains){
+  return await removeDomainFromIgnoreListQuery(gID,domains)
+}
 async function insertUserIntoIgnoreList(gID,users){
   return await insertUserIntoIgnoreListQuery(gID,users)
 }
+async function removeUserFromIgnoreList(gID,users){
+  return await removeUserFromIgnoreListQuery(gID,users)
+}
 
-function CreateMessageForSettingProperties(res){
+function CreateMessageForSettingProperties(res,userRes){
     const intDays = res.timeOut.days.low;
     const intHours = res.timeOut.seconds.low/3600;
 
@@ -95,7 +102,10 @@ function CreateMessageForSettingProperties(res){
     } 
 
     let msgURLIgnoreList = res.URLIgnoreList.join()
-    let msgUserIgnoreList = res.userIgnoreList
+    let msgUserIgnoreList = res.userIgnoreList.map(user=>{
+      let userClass = userRes.find(u=>u.user.id==user)
+      return userClass.user.username
+    }).join()
     let msg = `Sure thing! Here's all the setting properties:
     \nTime Out: ${msgDay}${msgHour}
     \nMode: ${msgMode}
@@ -129,5 +139,7 @@ module.exports = {
   DirectForgetLink,
   insertUserIntoIgnoreList,
   insertDomainIntoIgnoreList,
+  removeDomainFromIgnoreList,
+  removeUserFromIgnoreList,
   verifyConnectivity
 };
