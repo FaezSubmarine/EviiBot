@@ -20,7 +20,6 @@ module.exports = {
 				}
 				let res = await DirectForgetLink(interaction.guildId,URLs)
 				let msg = "";
-				console.log(res)
 				for(let i = 0;i< URLs.length;++i){
 					let element = res[i]._fields[0];
 					msg+= element?(`Hmmm, I never seen <${URLs[i]}> before\n`):

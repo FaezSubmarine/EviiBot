@@ -2,6 +2,7 @@ const {
   updateTimeOutSettingDuration,
   ChangeModeQuery,
   GetURLsQuery,
+  resetGuildQuery,
   getSettingPropertiesQuery,
   ToggleURLForgetfulnessQuery,
   DirectForgetLinkQuery,
@@ -64,7 +65,9 @@ async function ChangeMode(gID, mode) {
 async function GetURLs(gID) {
   return await GetURLsQuery(gID);
 }
-
+async function resetGuild(gID){
+  await resetGuildQuery(gID);
+}
 async function getSettingProperties(gID) {
     return await getSettingPropertiesQuery(gID);
 }
@@ -133,6 +136,7 @@ module.exports = {
   ChangeMode,
   CheckInputForMode,
   GetURLs,
+  resetGuild,
   getSettingProperties,
   CreateMessageForSettingProperties,
   ToggleURLForgetfulness,

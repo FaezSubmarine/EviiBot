@@ -3,10 +3,10 @@ const {insertDomainIntoIgnoreList} = require('../../service/AdminService.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('addtourlignorelist')
-		.setDescription('The bot works by storing the link in a database, then.')
+		.setDescription('add a keyword to the database so when a link has that keyword, the bot will ignore it')
 		.addStringOption(option=>
 			option.setName('domain')
-			.setDescription('give the bot a domain to ignore IE tenor.com')
+			.setDescription('give the bot a domain to ignore IE tenor')
 			.setRequired(true)
 		)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),

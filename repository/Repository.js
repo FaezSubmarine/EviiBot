@@ -28,6 +28,23 @@ async function mergeGuildQuery(arrayQStr) {
   );
   await session.close();
 }
+async function resetGuildQuery(gID){
+  let session = driver.session({ database: "neo4j" });
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      match (s:Setting)<--(g:Guild{gID: $gID})-->(u:User)-->(url:URL)
+      DETACH DELETE u
+      DETACH DELETE url
+      SET s.timeOut=duration({hours:1}) 
+      SET s.mode = 0 
+      SET s.deleteAfterRepost = TRUE
+      SET s.URLIgnoreList = $defaultURLIgnoreList
+      SET s.userIgnoreList = []
+      `,{gID:gID,defaultURLIgnoreList:["tenor"]}
+    )
+  })
+  await session.close();
+}
 async function deleteGuildAndContentQuery(gID) {
   let session = driver.session({ database: "neo4j" });
   await session.run(
@@ -131,15 +148,21 @@ async function insertDomainIntoIgnoreListQuery(gID,domains){
 
   let res = await session.executeWrite(async tx =>{
     return await tx.run(`
-      MATCH (g:Guild{gID:$gID})-->(s:Setting)
+      match (s:Setting)<--(g:Guild{gID: $gID})
       SET s.URLIgnoreList = s.URLIgnoreList+$domains
-      return $domains
+      with s
+      match (g)-->(u:User)-->(url:URL)
+      where any(word IN s.URLIgnoreList WHERE url.body CONTAINS word)
+      DETACH DELETE url
+      with u, $domains as domains
+      match (u) where NOT (u)-->()
+      DETACH DELETE u
       `,{gID:gID,domains:domains}
     )
   })
 
   await session.close();
-  return res.records[0]._fields[0];
+  return domains;
 }
 
 async function removeDomainFromIgnoreListQuery(gID,domains){
@@ -157,7 +180,25 @@ async function removeDomainFromIgnoreListQuery(gID,domains){
   await session.close();
   return res.records[0]._fields[0];
 }
+async function insertUserIntoIgnoreListQuery(gID,users){
+  let session = driver.session({ database: "neo4j" });
 
+  let res = await session.executeWrite(async tx =>{
+    return await tx.run(`
+      MATCH (g:Guild{gID:$gID})-->(s:Setting)
+      SET s.userIgnoreList = s.userIgnoreList+$users
+      with s,g
+      match (g)-->(u:User)-->(url:URL)
+      where any(word IN s.userIgnoreList WHERE u.uID = word)
+      detach delete url
+      detach delete u
+      `,{gID:gID,users:users}
+    )
+  })
+
+  await session.close();
+  return users;
+}
 async function removeUserFromIgnoreListQuery(gID,users){
   let session = driver.session({ database: "neo4j" });
 
@@ -173,21 +214,7 @@ async function removeUserFromIgnoreListQuery(gID,users){
   await session.close();
   return res.records[0]._fields[0];
 }
-async function insertUserIntoIgnoreListQuery(gID,users){
-  let session = driver.session({ database: "neo4j" });
 
-  let res = await session.executeWrite(async tx =>{
-    return await tx.run(`
-      MATCH (g:Guild{gID:$gID})-->(s:Setting)
-      SET s.userIgnoreList = s.userIgnoreList+$users
-      return $users
-      `,{gID:gID,users:users}
-    )
-  })
-
-  await session.close();
-  return res.records[0]._fields[0];
-}
 async function ToggleURLForgetfulnessQuery(gID){
   let session = driver.session({ database: "neo4j" });
   const res = await session.run(
@@ -229,6 +256,7 @@ module.exports = {
   checkModeOfEachGuildQuery,
   ChangeModeQuery,
   GetURLsQuery,
+  resetGuildQuery,
   getSettingPropertiesQuery,
   ToggleURLForgetfulnessQuery,
   DirectForgetLinkQuery,
