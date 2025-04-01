@@ -53,6 +53,10 @@ Remove a domain from a url ignore list. To do so, type \`/removefromurlignorelis
 
 Remove a user from a user ignore list. To do so, type \`/removefromuserignorelist exampleuser\`. Do note that you have to type exactly which user you want to remove. You can also remove multiple user with one command by seperating each domain with space like so \`/removefromuserignorelist user1 user2\`
 
+/resetserver
+
+Deletes all URLs stored on the database and reset server setting.
+
 /setmode
 
 The bot currently has two modes: Response Mode and Delete Mode. It can be set by using /setmode and then its corresponding number. For example, \`/setmode 0\` for Response Mode, and \`/setmode 1\` for Delete Mode.
